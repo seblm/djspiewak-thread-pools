@@ -1,35 +1,58 @@
 package threadpools
 
-import java.io.OutputStream
+import java.lang.Thread.currentThread
 import java.net.InetSocketAddress
+import java.util.concurrent.Executors
 import java.util.logging.Logger
 
 import chrono.ChronoManager
 import com.sun.net.httpserver.{HttpExchange, HttpServer}
 
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
+import scala.concurrent.JavaConversions._
+import scala.util.Success
+
 object ThreadPoolsHttpServer extends App {
-  System.setProperty("java.util.logging.config.file", "src/main/resources/logging.properties")
+  System.setProperty("java.util.logging.config.file",
+                     "src/main/resources/logging.properties")
   val log: Logger = Logger.getLogger("threadpools")
   val backlog: Int = 0
-  val server: HttpServer = HttpServer.create(new InetSocketAddress(8080), backlog)
+  val server: HttpServer =
+    HttpServer.create(new InetSocketAddress(8080), backlog)
   var chronoManager: ChronoManager = ChronoManager()
+  val blockingIOThreadPool: ExecutionContextExecutorService = Executors.newCachedThreadPool()
   server.createContext(
-    "/threadpools",
-    { (t: HttpExchange) =>
+    "/threadpools", { (t: HttpExchange) =>
+      val threadName = currentThread().getName
       chronoManager = chronoManager.start()
-      log.info("receive message")
-      log.info(Thread.currentThread().getName)
-      Thread.sleep(5000)
-      val response: String = "This is the response"
-      t.sendResponseHeaders(200, response.length())
-      val os: OutputStream = t.getResponseBody
-      os.write(response.getBytes())
-      os.close()
+
+      val blockingIOResult = Future.apply {
+        chronoManager = chronoManager.start()
+        blockIO()
+        chronoManager = chronoManager.stop()
+      }(blockingIOThreadPool)
+
+      blockingIOResult.andThen{
+        case Success(_) =>
+          chronoManager = chronoManager.start(threadName)
+          t.sendResponseHeaders(200, 0)
+          t.close()
+
+          println("coucou")
+          chronoManager = chronoManager.stop(threadName)
+          chronoManager.generate()
+      }(blockingIOThreadPool) // TODO A changer
+
+
       chronoManager = chronoManager.stop()
-      chronoManager.generate()
       ()
     }
   )
+
+  private def blockIO() = {
+    Thread.sleep(5000)
+  }
+
   server.start()
   log.info("server is started, main thread will stop")
 }

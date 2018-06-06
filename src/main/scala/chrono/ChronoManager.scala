@@ -10,11 +10,10 @@ import scala.io.Source
 case class ChronoManager(measuresByThread: Map[String, List[FinishedMeasure]] = Map.empty,
                          currentMeasures: Map[String, StartedMeasure] = Map.empty) {
 
-  def start(): ChronoManager =
-    ChronoManager(measuresByThread, currentMeasures.updated(currentThread().getName, StartedMeasure()))
+  def start(threadName: String = currentThread().getName): ChronoManager =
+    ChronoManager(measuresByThread, currentMeasures.updated(threadName, StartedMeasure()))
 
-  def stop(): ChronoManager = {
-    val threadName = currentThread().getName
+  def stop(threadName: String = currentThread().getName): ChronoManager = {
     currentMeasures.get(threadName).map { startedMeasure ⇒
       val finishedMeasures = measuresByThread.getOrElse(threadName, List.empty) :+ FinishedMeasure(startedMeasure)
       ChronoManager(measuresByThread.updated(threadName, finishedMeasures), currentMeasures)
@@ -24,7 +23,7 @@ case class ChronoManager(measuresByThread: Map[String, List[FinishedMeasure]] = 
   def generate(): Unit = {
     val threads = measuresByThread.keySet
     val paris = ZoneId.of("Europe/Paris")
-    val toIso = DateTimeFormatter.ofPattern("'Date.UTC('y, M, d, H, m, s, S)")
+    val toIso = DateTimeFormatter.ofPattern("'Date.UTC('y, M, d, H, m, s, SSS)")
     val data = threads.zipWithIndex.map { case (thread, index) ⇒
       measuresByThread(thread).map { measure ⇒
         s"{x: ${measure.start.start.atZone(paris).format(toIso)}, x2: ${measure.end.atZone(paris).format(toIso)}, y: $index}"
