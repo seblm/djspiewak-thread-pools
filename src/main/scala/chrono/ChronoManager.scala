@@ -6,7 +6,6 @@ import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
 
 import scala.io.Source
-import scala.util.Try
 
 case class ChronoManager(measuresByThread: Map[String, List[FinishedMeasure]] = Map.empty,
                          currentMeasures: Map[String, StartedMeasure] = Map.empty) {
@@ -23,18 +22,19 @@ case class ChronoManager(measuresByThread: Map[String, List[FinishedMeasure]] = 
   }
 
   def generate(): Unit = {
-    Try {
-      val threads = measuresByThread.keySet
-      val paris = ZoneId.of("Europe/Paris")
-      val toIso = DateTimeFormatter.ofPattern("'Date.UTC('y, M, d, H, m, s, S)")
-      val data = threads.zipWithIndex.map { case (thread, index) =>
-        measuresByThread(thread).map(measure => s"{x: ${measure.start.start.atZone(paris).format(toIso)}, x2: ${measure.end.atZone(paris).format(toIso)}, y: $index}").mkString(", ")
-      }.mkString("[", ", ", "]")
-      val source = Source.fromResource("template.html").mkString
-        .replaceAll("""\$\{threads\}""", threads.mkString("['", "', '", "']"))
-        .replaceAll("""\$\{data\}""", data)
-      Files.write(Paths.get("src", "main", "web", "index.html"), source.getBytes)
-    }.fold(error => println(error), _ => ())
+    val threads = measuresByThread.keySet
+    val paris = ZoneId.of("Europe/Paris")
+    val toIso = DateTimeFormatter.ofPattern("'Date.UTC('y, M, d, H, m, s, S)")
+    val data = threads.zipWithIndex.map { case (thread, index) ⇒
+      measuresByThread(thread).map { measure ⇒
+        s"{x: ${measure.start.start.atZone(paris).format(toIso)}, x2: ${measure.end.atZone(paris).format(toIso)}, y: $index}"
+      }
+        .mkString(", ")
+    }.mkString("[", ", ", "]")
+    val source = Source.fromResource("template.html").mkString
+      .replaceAll("""\$\{threads\}""", threads.mkString("['", "', '", "']"))
+      .replaceAll("""\$\{data\}""", data)
+    Files.write(Paths.get("src", "main", "webapp", "index.html"), source.getBytes)
   }
 
 }
