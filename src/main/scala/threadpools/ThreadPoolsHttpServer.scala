@@ -19,37 +19,37 @@ object ThreadPoolsHttpServer extends App {
   val backlog: Int = 0
   val server: HttpServer =
     HttpServer.create(new InetSocketAddress(8080), backlog)
-  var chronoManager: ChronoManager = ChronoManager()
+  val chronoManager: ChronoManager = new ChronoManager()
   val blockingIOThreadPool: ExecutionContextExecutorService = Executors.newCachedThreadPool()
   server.createContext(
-    "/threadpools", { (t: HttpExchange) =>
+    "/threadpools", { exchange: HttpExchange =>
       val threadName = currentThread().getName
-      chronoManager = chronoManager.start()
+      chronoManager.start()
 
       val blockingIOResult = Future.apply {
-        chronoManager = chronoManager.start()
+        chronoManager.start()
         blockIO()
-        chronoManager = chronoManager.stop()
+        chronoManager.stop()
       }(blockingIOThreadPool)
 
       blockingIOResult.andThen{
         case Success(_) =>
-          chronoManager = chronoManager.start(threadName)
-          t.sendResponseHeaders(200, 0)
-          t.close()
+          chronoManager.start(threadName)
+          exchange.sendResponseHeaders(200, 0)
+          exchange.close()
 
           println("coucou")
-          chronoManager = chronoManager.stop(threadName)
+          chronoManager.stop(threadName)
           chronoManager.generate()
       }(blockingIOThreadPool) // TODO A changer
 
 
-      chronoManager = chronoManager.stop()
+      chronoManager.stop()
       ()
     }
   )
 
-  private def blockIO() = {
+  private def blockIO(): Unit = {
     Thread.sleep(5000)
   }
 

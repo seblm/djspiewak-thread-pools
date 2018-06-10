@@ -1,3 +1,5 @@
+import Dependencies._
+
 lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
@@ -5,5 +7,7 @@ lazy val root = (project in file(".")).
       scalaVersion := "2.12.6",
       version      := "0.1.0-SNAPSHOT"
     )),
-    name := "djspiewak-thread-pools"
+    name := "djspiewak-thread-pools",
+    projectDependencies += `mockito-core`,
+    projectDependencies += scalatest
   )
