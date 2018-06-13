@@ -14,14 +14,16 @@ class ChronoManager(private val clock: Clock = Clock.systemDefaultZone()) {
 
   private val currentMeasures: mutable.Map[String, StartedMeasure] = mutable.Map.empty
 
-  def start(threadName: String = currentThread().getName): Unit = currentMeasures.update(threadName, StartedMeasure(clock))
+  def start(): Unit = currentMeasures.update(currentThread().getName, StartedMeasure(clock))
 
-  def stop(threadName: String = currentThread().getName): Unit =
+  def stop(): Unit = {
+    val threadName = currentThread().getName
     currentMeasures.get(threadName).foreach { startedMeasure ⇒
       val finishedMeasures = measuresByThread.getOrElse(threadName, List.empty) :+ FinishedMeasure(startedMeasure, clock)
       measuresByThread.update(threadName, finishedMeasures)
       currentMeasures.remove(threadName)
     }
+  }
 
   def measures(): Map[String, List[FinishedMeasure]] = measuresByThread.toMap
 
@@ -36,7 +38,10 @@ class ChronoManager(private val clock: Clock = Clock.systemDefaultZone()) {
         .mkString(",\n")
     }.mkString("[\n", ",\n", "\n                ]")
     val source = Source.fromResource("template.html").mkString
-      .replaceAll("""\$\{threads\}""", threads.mkString("['", "', '", "']"))
+      .replaceAll("""\$\{threads\}""", threads.map {
+        case "pool-1-thread-1" ⇒ "Non-blocking IO polling"
+        case threadName ⇒ threadName
+      }.mkString("['", "', '", "']"))
       .replaceAll("""\$\{data\}""", data)
     Files.write(Paths.get("src", "main", "webapp", "index.html"), source.getBytes)
   }

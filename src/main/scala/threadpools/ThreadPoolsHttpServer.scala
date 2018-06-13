@@ -1,14 +1,13 @@
 package threadpools
 
-import java.lang.Thread.currentThread
 import java.net.InetSocketAddress
-import java.util.concurrent.Executors
+import java.util.concurrent.{ExecutorService, Executors}
 import java.util.logging.Logger
 
 import chrono.ChronoManager
 import com.sun.net.httpserver.{HttpExchange, HttpServer}
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
+import scala.concurrent.{ExecutionContextExecutorService, Future}
 import scala.concurrent.JavaConversions._
 import scala.util.Success
 
@@ -20,28 +19,28 @@ object ThreadPoolsHttpServer extends App {
   val server: HttpServer =
     HttpServer.create(new InetSocketAddress(8080), backlog)
   val chronoManager: ChronoManager = new ChronoManager()
+  var nonBlockingIOPolling: ExecutorService = Executors.newSingleThreadExecutor()
+  server.setExecutor(nonBlockingIOPolling)
   val blockingIOThreadPool: ExecutionContextExecutorService = Executors.newCachedThreadPool()
   server.createContext(
     "/threadpools", { exchange: HttpExchange =>
-      val threadName = currentThread().getName
       chronoManager.start()
 
-      val blockingIOResult = Future.apply {
+      val blockingIOResult = Future {
         chronoManager.start()
         blockIO()
         chronoManager.stop()
       }(blockingIOThreadPool)
 
-      blockingIOResult.andThen{
+      blockingIOResult.andThen {
         case Success(_) =>
-          chronoManager.start(threadName)
+          chronoManager.start()
           exchange.sendResponseHeaders(200, 0)
           exchange.close()
 
-          println("coucou")
-          chronoManager.stop(threadName)
+          chronoManager.stop()
           chronoManager.generate()
-      }(blockingIOThreadPool) // TODO A changer
+      }(nonBlockingIOPolling)
 
 
       chronoManager.stop()
@@ -50,7 +49,7 @@ object ThreadPoolsHttpServer extends App {
   )
 
   private def blockIO(): Unit = {
-    Thread.sleep(5000)
+    Thread.sleep(100)
   }
 
   server.start()

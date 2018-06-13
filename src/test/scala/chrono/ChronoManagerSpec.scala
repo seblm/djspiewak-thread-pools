@@ -11,7 +11,7 @@ class ChronoManagerSpec extends FlatSpec with Matchers with MockitoSugar {
   "ChronoManager" should "not contain any measure" in {
     val chronoManager = given_chrono_manager()
 
-    chronoManager.start("thread's name")
+    chronoManager.start()
 
     chronoManager.measures() should be(empty)
   }
@@ -19,22 +19,22 @@ class ChronoManagerSpec extends FlatSpec with Matchers with MockitoSugar {
   it should "contain one measure" in {
     val chronoManager = given_chrono_manager()
 
-    chronoManager.start("thread's name")
-    chronoManager.stop("thread's name")
+    chronoManager.start()
+    chronoManager.stop()
 
-    chronoManager.measures() should contain only "thread's name" → List(
+    chronoManager.measures() should contain only "ScalaTest-run-running-ChronoManagerSpec" → List(
       FinishedMeasure(StartedMeasure(measures(0)), measures(1)))
   }
 
   it should "contain two measures for the same thread" in {
     val chronoManager = given_chrono_manager()
 
-    chronoManager.start("thread's name")
-    chronoManager.stop("thread's name")
-    chronoManager.start("thread's name")
-    chronoManager.stop("thread's name")
+    chronoManager.start()
+    chronoManager.stop()
+    chronoManager.start()
+    chronoManager.stop()
 
-    chronoManager.measures() should contain only "thread's name" → List(
+    chronoManager.measures() should contain only "ScalaTest-run-running-ChronoManagerSpec" → List(
       FinishedMeasure(StartedMeasure(measures(0)), measures(1)),
       FinishedMeasure(StartedMeasure(measures(2)), measures(3)))
   }
