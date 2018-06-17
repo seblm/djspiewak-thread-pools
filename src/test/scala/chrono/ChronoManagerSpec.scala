@@ -22,7 +22,7 @@ class ChronoManagerSpec extends FlatSpec with Matchers with MockitoSugar {
     chronoManager.start()
     chronoManager.stop()
 
-    chronoManager.measures() should contain only "ScalaTest-run-running-ChronoManagerSpec" → List(
+    chronoManager.measures().values should contain only List(
       FinishedMeasure(StartedMeasure(measures(0)), measures(1)))
   }
 
@@ -34,7 +34,7 @@ class ChronoManagerSpec extends FlatSpec with Matchers with MockitoSugar {
     chronoManager.start()
     chronoManager.stop()
 
-    chronoManager.measures() should contain only "ScalaTest-run-running-ChronoManagerSpec" → List(
+    chronoManager.measures().values should contain only List(
       FinishedMeasure(StartedMeasure(measures(0)), measures(1)),
       FinishedMeasure(StartedMeasure(measures(2)), measures(3)))
   }
@@ -51,4 +51,5 @@ class ChronoManagerSpec extends FlatSpec with Matchers with MockitoSugar {
     given(clock.instant()).willReturn(measures.head, measures.tail: _*)
     chronoManager
   }
+
 }
