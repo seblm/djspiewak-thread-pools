@@ -10,7 +10,7 @@ import scala.io.Source
 
 class ChronoManager(private val clock: Clock = Clock.systemDefaultZone()) {
 
-  private val measuresByThread: mutable.Map[String, List[FinishedMeasure]] = mutable.Map.empty
+  private val measuresByThread: mutable.SortedMap[String, List[FinishedMeasure]] = mutable.TreeMap.empty
 
   private val currentMeasures: mutable.Map[String, StartedMeasure] = mutable.Map.empty
 
@@ -28,7 +28,7 @@ class ChronoManager(private val clock: Clock = Clock.systemDefaultZone()) {
   def measures(): Map[String, List[FinishedMeasure]] = measuresByThread.toMap
 
   def generate(): Unit = {
-    val threads = measuresByThread.keySet
+    val threads = measuresByThread.keySet.toSet
     val paris = ZoneId.of("Europe/Paris")
     val toIso = DateTimeFormatter.ofPattern("'Date.UTC('y, M, d, H, m, s, SSS)")
     val data = threads.zipWithIndex.map { case (thread, index) ⇒
@@ -38,12 +38,18 @@ class ChronoManager(private val clock: Clock = Clock.systemDefaultZone()) {
         .mkString(",\n")
     }.mkString("[\n", ",\n", "\n                ]")
     val source = Source.fromResource("template.html").mkString
-      .replaceAll("""\$\{threads\}""", threads.map {
-        case "pool-1-thread-1" ⇒ "Non-blocking IO polling"
-        case threadName ⇒ threadName
-      }.mkString("['", "', '", "']"))
+      .replaceAll("""\$\{threads\}""", threads.map(renameThreadPools).mkString("['", "', '", "']"))
       .replaceAll("""\$\{data\}""", data)
     Files.write(Paths.get("src", "main", "webapp", "index.html"), source.getBytes)
+  }
+
+  private def renameThreadPools(name: String): String = {
+    val poolMatcher = """pool-2-thread-(\d+)""".r
+    name match {
+      case "pool-1-thread-1" ⇒ "Non-blocking IO polling"
+      case poolMatcher(threadNumber) ⇒ s"Blocking IO $threadNumber"
+      case threadName ⇒ threadName
+    }
   }
 
 }
