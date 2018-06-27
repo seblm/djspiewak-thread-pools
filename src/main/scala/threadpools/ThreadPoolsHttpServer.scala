@@ -22,13 +22,13 @@ object ThreadPoolsHttpServer extends App {
   val blockingIOThreadPool: ExecutionContext = Executors.newCachedThreadPool()
   server.createContext(
     "/threadpools", { exchange: HttpExchange ⇒
-      measure {
+      measure(s"↘️") {
         Future {
-          measure {
+          measure(s"🚫") {
             blockIO()
           }
         }(blockingIOThreadPool).map { _ ⇒
-          measure {
+          measure(s"↗️") {
             exchange.sendResponseHeaders(200, 0)
             exchange.close()
           }
@@ -41,8 +41,8 @@ object ThreadPoolsHttpServer extends App {
 
   private def blockIO(): Unit = Thread.sleep(100)
 
-  private def measure[T](f: => T): T = {
-    chronoManager.start()
+  private def measure[T](label: String)(f: => T): T = {
+    chronoManager.start(label)
     val result = f
     chronoManager.stop()
     result

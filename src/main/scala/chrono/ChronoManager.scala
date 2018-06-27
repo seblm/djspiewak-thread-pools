@@ -14,7 +14,7 @@ class ChronoManager(private val clock: Clock = Clock.systemDefaultZone()) {
 
   private val currentMeasures: mutable.Map[String, StartedMeasure] = mutable.Map.empty
 
-  def start(): Unit = currentMeasures.update(currentThread().getName, StartedMeasure(clock))
+  def start(label: String): Unit = currentMeasures.update(currentThread().getName, StartedMeasure(label, clock))
 
   def stop(): Unit = {
     val threadName = currentThread().getName
@@ -33,7 +33,7 @@ class ChronoManager(private val clock: Clock = Clock.systemDefaultZone()) {
     val toIso = DateTimeFormatter.ofPattern("'Date.UTC('y, M, d, H, m, s, SSS)")
     val data = threads.zipWithIndex.map { case (thread, index) ⇒
       measuresByThread(thread).map { measure ⇒
-        s"                    {x: ${measure.start.start.atZone(paris).format(toIso)}, x2: ${measure.end.atZone(paris).format(toIso)}, y: $index}"
+        s"                    {x: ${measure.start.start.atZone(paris).format(toIso)}, x2: ${measure.end.atZone(paris).format(toIso)}, y: $index, label: '${measure.start.label}'}"
       }
         .mkString(",\n")
     }.mkString("[\n", ",\n", "\n                ]")
@@ -56,11 +56,11 @@ class ChronoManager(private val clock: Clock = Clock.systemDefaultZone()) {
 
 sealed trait Measure
 
-case class StartedMeasure(start: Instant) extends Measure
+case class StartedMeasure(label: String, start: Instant) extends Measure
 
 object StartedMeasure {
 
-  def apply(clock: Clock): StartedMeasure = StartedMeasure(clock.instant())
+  def apply(label: String, clock: Clock): StartedMeasure = StartedMeasure(label, clock.instant())
 
 }
 

@@ -11,7 +11,7 @@ class ChronoManagerSpec extends FlatSpec with Matchers with MockitoSugar {
   "ChronoManager" should "not contain any measure" in {
     val chronoManager = given_chrono_manager()
 
-    chronoManager.start()
+    chronoManager.start("label")
 
     chronoManager.measures() should be(empty)
   }
@@ -19,24 +19,24 @@ class ChronoManagerSpec extends FlatSpec with Matchers with MockitoSugar {
   it should "contain one measure" in {
     val chronoManager = given_chrono_manager()
 
-    chronoManager.start()
+    chronoManager.start("label")
     chronoManager.stop()
 
     chronoManager.measures().values should contain only List(
-      FinishedMeasure(StartedMeasure(measures(0)), measures(1)))
+      FinishedMeasure(StartedMeasure("label", measures(0)), measures(1)))
   }
 
   it should "contain two measures for the same thread" in {
     val chronoManager = given_chrono_manager()
 
-    chronoManager.start()
+    chronoManager.start("label1")
     chronoManager.stop()
-    chronoManager.start()
+    chronoManager.start("label2")
     chronoManager.stop()
 
     chronoManager.measures().values should contain only List(
-      FinishedMeasure(StartedMeasure(measures(0)), measures(1)),
-      FinishedMeasure(StartedMeasure(measures(2)), measures(3)))
+      FinishedMeasure(StartedMeasure("label1", measures(0)), measures(1)),
+      FinishedMeasure(StartedMeasure("label2", measures(2)), measures(3)))
   }
 
   private val measures: List[Instant] = List(

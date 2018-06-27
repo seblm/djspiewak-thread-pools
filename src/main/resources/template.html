@@ -42,8 +42,18 @@
             },
             series: [{
                 name: 'Performances results',
-                data: ${data}
-            }]
+                data: ${data},
+                dataLabels: {
+                    enabled: true
+                }
+            }],
+            plotOptions: {
+                xrange: {
+                    dataLabels: {
+                        formatter: function () { return this.point.label; }
+                    }
+                }
+            }
         });
     };
 </script>
