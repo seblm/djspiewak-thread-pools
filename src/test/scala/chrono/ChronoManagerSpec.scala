@@ -13,7 +13,7 @@ class ChronoManagerSpec extends FlatSpec with Matchers with MockitoSugar {
 
     chronoManager.start("label")
 
-    chronoManager.measures() should be(empty)
+    chronoManager.clear() should be(empty)
   }
 
   it should "contain one measure" in {
@@ -22,7 +22,7 @@ class ChronoManagerSpec extends FlatSpec with Matchers with MockitoSugar {
     chronoManager.start("label")
     chronoManager.stop()
 
-    chronoManager.measures().values should contain only List(
+    chronoManager.clear().values should contain only List(
       FinishedMeasure(StartedMeasure("label", measures(0)), measures(1)))
   }
 
@@ -34,19 +34,22 @@ class ChronoManagerSpec extends FlatSpec with Matchers with MockitoSugar {
     chronoManager.start("label2")
     chronoManager.stop()
 
-    chronoManager.measures().values should contain only List(
+    chronoManager.clear().values should contain only List(
       FinishedMeasure(StartedMeasure("label1", measures(0)), measures(1)),
       FinishedMeasure(StartedMeasure("label2", measures(2)), measures(3)))
   }
 
-  it should "remove measures once generated" in {
+  it should "remove measures once cleared" in {
     val chronoManager = given_chrono_manager()
-    chronoManager.start("label")
+
+    chronoManager.start("label1")
+    chronoManager.stop()
+    chronoManager.clear()
+    chronoManager.start("label2")
     chronoManager.stop()
 
-    chronoManager.generate()
-
-    chronoManager.measures() should be(empty)
+    chronoManager.clear().values should contain only List(
+      FinishedMeasure(StartedMeasure("label2", measures(2)), measures(3)))
   }
 
   private val measures: List[Instant] = List(
