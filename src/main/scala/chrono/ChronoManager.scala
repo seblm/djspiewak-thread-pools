@@ -41,6 +41,8 @@ class ChronoManager(private val clock: Clock = Clock.systemDefaultZone()) {
       .replaceAll("""\$\{threads\}""", threads.map(renameThreadPools).mkString("['", "', '", "']"))
       .replaceAll("""\$\{data\}""", data)
     Files.write(Paths.get("src", "main", "webapp", "index.html"), source.getBytes)
+    measuresByThread.clear
+    currentMeasures.clear
   }
 
   private def renameThreadPools(name: String): String = {

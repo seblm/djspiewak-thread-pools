@@ -39,6 +39,16 @@ class ChronoManagerSpec extends FlatSpec with Matchers with MockitoSugar {
       FinishedMeasure(StartedMeasure("label2", measures(2)), measures(3)))
   }
 
+  it should "remove measures once generated" in {
+    val chronoManager = given_chrono_manager()
+    chronoManager.start("label")
+    chronoManager.stop()
+
+    chronoManager.generate()
+
+    chronoManager.measures() should be(empty)
+  }
+
   private val measures: List[Instant] = List(
     Instant.parse("2018-06-10T10:15:30.010Z"),
     Instant.parse("2018-06-10T10:15:30.590Z"),

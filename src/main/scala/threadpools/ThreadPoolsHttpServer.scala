@@ -32,9 +32,20 @@ object ThreadPoolsHttpServer extends App {
             exchange.sendResponseHeaders(200, 0)
             exchange.close()
           }
-          chronoManager.generate()
         }(nonBlockingIOPolling)
       }
+      ()
+    }
+  )
+
+  server.createContext(
+    "/generate", { exchange: HttpExchange ⇒
+      Future {
+        chronoManager.generate()
+      }(blockingIOThreadPool).map { _ =>
+        exchange.sendResponseHeaders(200, 0)
+        exchange.close()
+      }(nonBlockingIOPolling)
       ()
     }
   )
