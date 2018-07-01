@@ -4,7 +4,7 @@ import java.nio.file.{Files, Paths}
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-import chrono.ChronoManager
+import chrono.{ChronoManager, FinishedMeasure}
 import com.sun.net.httpserver.{HttpExchange, HttpServer}
 
 import scala.io.Source
@@ -31,28 +31,33 @@ trait PerformanceResults {
 
   private def generate(): Unit = {
     val measuresByThread = chronoManager.clear()
-    val threads = measuresByThread.keySet.toSet
-    val paris = ZoneId.of("Europe/Paris")
-    val toIso = DateTimeFormatter.ofPattern("'Date.UTC('y, M, d, H, m, s, SSS)")
+    val threads = measuresByThread.keySet
     val data = threads.zipWithIndex.map { case (thread, index) ⇒
-      measuresByThread(thread).map { measure ⇒
-        s"                    {x: ${measure.start.start.atZone(paris).format(toIso)}, x2: ${measure.end.atZone(paris).format(toIso)}, y: $index, label: '${measure.start.label}'}"
-      }
-        .mkString(",\n")
+      measuresByThread(thread).map(measureToJson(index)).mkString(",\n")
     }.mkString("[\n", ",\n", "\n                ]")
     val source = Source.fromResource("template.html").mkString
-      .replaceAll("""\$\{threads\}""", threads.map(renameThreadPools).mkString("['", "', '", "']"))
+      .replaceAll("""\$\{threads\}""", threads.toList.map(renameThreadPools).mkString("['", "', '", "']"))
       .replaceAll("""\$\{data\}""", data)
     Files.write(Paths.get("src", "main", "webapp", "index.html"), source.getBytes)
   }
 
-  private def renameThreadPools(name: String): String = {
-    val poolMatcher = """pool-2-thread-(\d+)""".r
-    name match {
-      case "pool-1-thread-1" ⇒ "Non-blocking IO polling"
-      case poolMatcher(threadNumber) ⇒ s"Blocking IO $threadNumber"
-      case threadName ⇒ threadName
-    }
+  private def measureToJson(index: Int)(measure: FinishedMeasure): String = {
+    val x = measure.start.start.atZone(paris).format(toIso)
+    val x2 = measure.end.atZone(paris).format(toIso)
+    val label = measure.start.label
+    s"                    {x: $x, x2: $x2, y: $index, label: '$label'}"
   }
+
+  private def renameThreadPools(name: String): String = name match {
+    case "Thread-2" ⇒ "Default HTTPServer thread"
+    case poolMatcher("1", _) ⇒ "Non-blocking IO polling"
+    case poolMatcher("2", threadNumber) ⇒ s"Blocking IO $threadNumber"
+    case poolMatcher("3", threadNumber) ⇒ s"CPU Bound $threadNumber"
+    case threadName ⇒ threadName
+  }
+
+  private val paris = ZoneId.of("Europe/Paris")
+  private val toIso = DateTimeFormatter.ofPattern("'Date.UTC('y, M, d, H, m, s, SSS)")
+  private val poolMatcher = """pool-(\d+)-thread-(\d+)""".r
 
 }
