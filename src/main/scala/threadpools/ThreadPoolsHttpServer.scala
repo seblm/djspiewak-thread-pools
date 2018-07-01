@@ -24,7 +24,7 @@ object ThreadPoolsHttpServer extends App with PerformanceResults with Log with F
   val cpuBoundThreadPool: ExecutionContext = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors()) // pool-3-thread-*
 
   server.createContext(
-    "/threadpools", { exchange: HttpExchange ⇒
+    "/", { exchange: HttpExchange ⇒
       measure("↘️") {
         Future {
           measure("🚫") {
