@@ -34,7 +34,7 @@ object ThreadPoolsHttpServer extends App with PerformanceResults with Log with F
           measure("🔥") {
             fibonacci(Random.nextInt(1) + 37)
           }
-        }(cpuBoundThreadPool).map { _ ⇒
+        }(cpuBoundThreadPool).onComplete { _ ⇒
           measure("↗️") {
             exchange.sendResponseHeaders(200, 0)
             exchange.close()
