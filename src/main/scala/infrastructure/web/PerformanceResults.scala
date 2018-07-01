@@ -49,7 +49,7 @@ trait PerformanceResults {
   }
 
   private def renameThreadPools(name: String): String = name match {
-    case "Thread-2" ⇒ "Default HTTPServer thread"
+    case "Thread-2" ⇒ "Default HttpServer thread"
     case poolMatcher("1", _) ⇒ "Non-blocking IO polling"
     case poolMatcher("2", threadNumber) ⇒ s"Blocking IO $threadNumber"
     case poolMatcher("3", threadNumber) ⇒ s"CPU Bound $threadNumber"
