@@ -9,6 +9,7 @@ import infrastructure.web.PerformanceResults
 
 import scala.concurrent.JavaConversions._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Random
 
 object ThreadPoolsHttpServer extends App with PerformanceResults with Log {
 
@@ -22,13 +23,13 @@ object ThreadPoolsHttpServer extends App with PerformanceResults with Log {
 
   server.createContext(
     "/threadpools", { exchange: HttpExchange ⇒
-      measure(s"↘️") {
+      measure("↘️") {
         Future {
-          measure(s"🚫") {
-            Thread.sleep(100)
+          measure("🚫") {
+            Thread.sleep(Random.nextInt(40) + 80)
           }
         }(blockingIOThreadPool).map { _ ⇒
-          measure(s"↗️") {
+          measure("↗️") {
             exchange.sendResponseHeaders(200, 0)
             exchange.close()
           }
