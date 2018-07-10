@@ -44,6 +44,7 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     object ThreadPoolsHttpServer extends App with Log with PerformanceResults {
 
       // ...
+      installPerformanceResultsTo(server)
 
       server.createContext("/", (exchange: HttpExchange) ⇒ {
         measure("handle") {
@@ -105,9 +106,9 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     // ...
 
     server.setExecutor(newSingleThreadExecutor())
-    val nonBlockingIOPolling: ExecutionContext = server.getExecutor()                               // pool-1-thread-1
-    val blockingIOThreadPool: ExecutionContext = newCachedThreadPool()                              // pool-2-thread-*
-    val cpuBoundThreadPool: ExecutionContext = newFixedThreadPool(getRuntime.availableProcessors()) // pool-3-thread-*
+    val nonBlockingIOPolling = server.getExecutor()  // pool-1-thread-1
+    val blockingIOThreadPool = newCachedThreadPool() // pool-2-thread-*
+    val cpuBoundThreadPool = newFixedThreadPool(2)   // pool-3-thread-*
 
     // ...
 

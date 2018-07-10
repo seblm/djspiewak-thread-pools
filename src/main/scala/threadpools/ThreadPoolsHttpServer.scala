@@ -1,6 +1,5 @@
 package threadpools
 
-import java.lang.Runtime.getRuntime
 import java.net.InetSocketAddress
 import java.util.concurrent.Executors.{newCachedThreadPool, newFixedThreadPool, newSingleThreadExecutor}
 
@@ -10,7 +9,7 @@ import infrastructure.log.Log
 import infrastructure.web.PerformanceResults
 
 import scala.concurrent.JavaConversions._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.util.Random
 
 object ThreadPoolsHttpServer extends App with Log with PerformanceResults with Fibonacci {
@@ -20,9 +19,9 @@ object ThreadPoolsHttpServer extends App with Log with PerformanceResults with F
   installPerformanceResultsTo(server)
 
   server.setExecutor(newSingleThreadExecutor())
-  val nonBlockingIOPolling: ExecutionContext = server.getExecutor() // pool-1-thread-1
-  val blockingIOThreadPool: ExecutionContext = newCachedThreadPool() // pool-2-thread-*
-  val cpuBoundThreadPool: ExecutionContext = newFixedThreadPool(getRuntime.availableProcessors()) // pool-3-thread-*
+  val nonBlockingIOPolling = server.getExecutor
+  val blockingIOThreadPool = newCachedThreadPool()
+  val cpuBoundThreadPool = newFixedThreadPool(2)
 
   server.createContext("/", (exchange: HttpExchange) ⇒ {
     measure("↘️") {
