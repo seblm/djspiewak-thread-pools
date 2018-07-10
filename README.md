@@ -58,13 +58,6 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     ```
 
     Then invoke the server
-    ```bash
-    $ curl --silent localhost:8080 && curl --silent localhost:8080/generate
-    ```
-
-    And go to performance results web page.
-
- 4. More than one request at the same time:
 
     ```bash
     src/scripts/test.sh
@@ -97,7 +90,7 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     ```
 
     ```bash
-    src/scripts/test-sleep.sh
+    src/scripts/test.sh
     ```
 
 

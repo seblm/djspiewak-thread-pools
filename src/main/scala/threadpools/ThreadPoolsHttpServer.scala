@@ -27,11 +27,11 @@ object ThreadPoolsHttpServer extends App with Log with PerformanceResults with F
   server.createContext("/", (exchange: HttpExchange) ⇒ {
     measure("↘️") {
       Future {
-        measure("🚫") {
+        measure(s"🚫 ${exchange.getRequestURI.getQuery}") {
           Thread.sleep(Random.nextInt(40) + 80)
         }
       }(blockingIOThreadPool).map { _ ⇒
-        measure("🔥") {
+        measure(s"🔥 ${exchange.getRequestURI.getQuery}") {
           fibonacci(Random.nextInt(1) + 37)
         }
       }(cpuBoundThreadPool).onComplete { _ ⇒
