@@ -15,8 +15,8 @@ import scala.util.Random
 
 object ThreadPoolsHttpServer extends App with Log with PerformanceResults with Fibonacci {
 
-  val backlog: Int = 0
-  val server: HttpServer = HttpServer.create(new InetSocketAddress(8080), backlog)
+  val defaultBacklog = 0
+  val server = HttpServer.create(new InetSocketAddress(8080), defaultBacklog)
   installPerformanceResultsTo(server)
 
   server.setExecutor(newSingleThreadExecutor())

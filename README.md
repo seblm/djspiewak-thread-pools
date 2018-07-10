@@ -7,8 +7,8 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     ```scala
     object ThreadPoolsHttpServer extends App with Log {
 
-      val backlog = 0
-      val server = HttpServer.create(new InetSocketAddress(8080), backlog)
+      val defaultBacklog = 0
+      val server = HttpServer.create(new InetSocketAddress(8080), defaultBacklog)
     
       server.start()
       log.info("server is started, main thread will stop")
