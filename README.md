@@ -2,7 +2,7 @@
 
 Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b543800958cf61af6efa8e072bfd5c).
 
- 1. Start with a basic HTTPServer (default HTTP server thread):
+ 1. (Seb) Start with a basic HTTPServer (default HTTP server thread):
  
     ```scala
     object ThreadPoolsHttpServer extends App with Log {
@@ -23,7 +23,7 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     HTTP/1.1 404 Not Found
     ```
 
- 2. Add a default route:
+ 2. (Martin) Add a default route:
 
     ```scala
     server.createContext("/", (exchange: HttpExchange) ⇒ {
@@ -38,7 +38,7 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     HTTP/1.1 200 OK
     ```
 
- 3. Measure the thing with some blocking IO:
+ 3. (Seb) Measure the thing with some blocking IO:
 
     ```scala
     object ThreadPoolsHttpServer extends App with Log with PerformanceResults {
@@ -65,7 +65,10 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
 
     And go to performance results web page.
 
- 5. Add computation and measure all the thing:
+    We can see that requests are stacked, performing blocking io and cpu bounded tasks on non blocking io polling is
+    bad.
+
+ 4. (Martin) Add computation and measure all the thing:
 
     ```scala
     object ThreadPoolsHttpServer extends App with Log with PerformanceResults with Fibonacci {
@@ -94,7 +97,7 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     ```
 
 
- 6. Creates Thread pools and dispatch:
+ 5. (Seb) Creates Thread pools and dispatch:
 
     ```scala
     import scala.concurrent.JavaConversions._
@@ -128,5 +131,5 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     }
     ```
 
- 7. Gatling
- 8. cats-effect
+ 6. Gatling
+ 7. cats-effect
