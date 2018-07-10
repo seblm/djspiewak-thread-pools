@@ -25,7 +25,6 @@ trait PerformanceResults {
       generate()
       exchange.sendResponseHeaders(200, 0)
       exchange.close()
-      ()
     }
   )
 
