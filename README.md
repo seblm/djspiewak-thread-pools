@@ -5,6 +5,11 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
  1. (Seb) Start with a basic HTTPServer (default HTTP server thread):
  
     ```scala
+    import java.net.InetSocketAddress
+
+    import com.sun.net.httpserver.HttpServer
+    import infrastructure.log.Log
+    
     object ThreadPoolsHttpServer extends App with Log {
 
       val defaultBacklog = 0
@@ -26,6 +31,8 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
  2. (Martin) Add a default route:
 
     ```scala
+    import com.sun.net.httpserver.HttpExchange
+    
     server.createContext("/", (exchange: HttpExchange) ⇒ {
       exchange.sendResponseHeaders(200, 0)
       exchange.close()
@@ -41,6 +48,12 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
  3. (Seb) Measure the thing with some blocking IO:
 
     ```scala
+    import com.sun.net.httpserver.{HttpExchange, HttpServer}
+    import infrastructure.log.Log
+    import infrastructure.web.PerformanceResults
+
+    import scala.util.Random
+    
     object ThreadPoolsHttpServer extends App with Log with PerformanceResults {
 
       // ...
@@ -72,6 +85,13 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
  4. (Martin) Add computation and measure all the thing:
 
     ```scala
+    import com.sun.net.httpserver.HttpExchange
+    import domain.Fibonacci
+    import infrastructure.log.Log
+    import infrastructure.web.PerformanceResults
+
+    import scala.util.Random
+
     object ThreadPoolsHttpServer extends App with Log with PerformanceResults with Fibonacci {
 
       // ...
@@ -101,7 +121,12 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
  5. (Seb) Creates Thread pools and dispatch:
 
     ```scala
+    import java.util.concurrent.Executors.{newCachedThreadPool, newFixedThreadPool, newSingleThreadExecutor}
+    
+    import com.sun.net.httpserver.HttpExchange
+    
     import scala.concurrent.JavaConversions._
+    import scala.util.Random
 
     // ...
 
@@ -133,4 +158,5 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     ```
 
  6. Gatling
+
  7. cats-effect
