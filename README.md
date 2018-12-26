@@ -77,7 +77,14 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     src/scripts/test.sh
     ```
 
-    And go to performance results web page.
+    Start web server
+
+    ```bash
+    cd src/main/webapp
+    python -m SimpleHTTPServer
+    ```
+
+    And go to [performance results web page](http://localhost:8000).
 
     We can see that requests are stacked, performing blocking io and cpu bounded tasks on non blocking io polling is
     bad.
