@@ -164,6 +164,41 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     }
     ```
 
- 6. Gatling
+ 6. (Martin) cats-effect
 
- 7. cats-effect
+    ```scala
+    import cats.effect.IO
+    import scala.util.Try
+
+    // ...
+
+    server.createContext("/", (exchange: HttpExchange) ⇒ {
+      val program = for {
+        _ <- IO.shift(blockingIOThreadPool)
+        _ <- IO {
+          measure(s"🚫 ${exchange.getRequestURI.getQuery}") {
+            Thread.sleep(Random.nextInt(40) + 80)
+          }
+        }
+        _ <- IO.shift(cpuBoundThreadPool)
+        _ <- IO {
+          measure(s"🔥 ${exchange.getRequestURI.getQuery}") {
+            fibonacci(Random.nextInt(1) + 37)
+          }
+        }
+        _ <- IO.shift(nonBlockingIOPolling)
+        _ <- IO {
+          measure("↗️") {
+            exchange.sendResponseHeaders(200, 0)
+            exchange.close()
+          }
+        }
+      } yield ()
+
+      measure("↘️") {
+        program.unsafeRunAsync(_.fold(_ ⇒ (), identity))
+      }
+    })
+    ```
+
+ 7. Gatling

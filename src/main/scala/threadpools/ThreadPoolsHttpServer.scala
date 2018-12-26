@@ -3,13 +3,13 @@ package threadpools
 import java.net.InetSocketAddress
 import java.util.concurrent.Executors.{newCachedThreadPool, newFixedThreadPool, newSingleThreadExecutor}
 
+import cats.effect.IO
 import com.sun.net.httpserver.{HttpExchange, HttpServer}
 import domain.Fibonacci
 import infrastructure.log.Log
 import infrastructure.web.PerformanceResults
 
 import scala.concurrent.JavaConversions._
-import scala.concurrent.Future
 import scala.util.Random
 
 object ThreadPoolsHttpServer extends App with Log with PerformanceResults with Fibonacci {
@@ -24,21 +24,30 @@ object ThreadPoolsHttpServer extends App with Log with PerformanceResults with F
   val cpuBoundThreadPool = newFixedThreadPool(2)
 
   server.createContext("/", (exchange: HttpExchange) ⇒ {
-    measure("↘️") {
-      Future {
+    val program = for {
+      _ <- IO.shift(blockingIOThreadPool)
+      _ <- IO {
         measure(s"🚫 ${exchange.getRequestURI.getQuery}") {
           Thread.sleep(Random.nextInt(40) + 80)
         }
-      }(blockingIOThreadPool).map { _ ⇒
+      }
+      _ <- IO.shift(cpuBoundThreadPool)
+      _ <- IO {
         measure(s"🔥 ${exchange.getRequestURI.getQuery}") {
           fibonacci(Random.nextInt(1) + 37)
         }
-      }(cpuBoundThreadPool).onComplete { _ ⇒
+      }
+      _ <- IO.shift(nonBlockingIOPolling)
+      _ <- IO {
         measure("↗️") {
           exchange.sendResponseHeaders(200, 0)
           exchange.close()
         }
-      }(nonBlockingIOPolling)
+      }
+    } yield ()
+
+    measure("↘️") {
+      program.unsafeRunAsync(_.fold(_ ⇒ (), identity))
     }
   })
 

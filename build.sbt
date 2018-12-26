@@ -9,5 +9,6 @@ lazy val root = (project in file(".")).
     )),
     name := "djspiewak-thread-pools",
     projectDependencies += `mockito-core`,
-    projectDependencies += scalatest
+    projectDependencies += scalatest,
+    libraryDependencies += "org.typelevel" % "cats-effect_2.12" % "1.1.0"
   )
