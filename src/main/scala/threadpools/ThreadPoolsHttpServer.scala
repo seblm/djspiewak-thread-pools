@@ -21,7 +21,7 @@ object ThreadPoolsHttpServer extends App with Log with PerformanceResults with F
   server.setExecutor(newSingleThreadExecutor())
   val nonBlockingIOPolling = server.getExecutor
   val blockingIOThreadPool = newCachedThreadPool()
-  val cpuBoundThreadPool = newFixedThreadPool(2)
+  val cpuBoundThreadPool = newFixedThreadPool(4)
 
   server.createContext("/", (exchange: HttpExchange) ⇒ {
     val program = for {
