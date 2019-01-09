@@ -1,8 +1,8 @@
 package infrastructure.web
 
 import java.nio.file.{Files, Paths}
-import java.time.{Duration, ZoneId}
 import java.time.format.DateTimeFormatter
+import java.time.{Duration, ZoneId}
 
 import chrono.{ChronoManager, FinishedMeasure}
 import com.sun.net.httpserver.{HttpExchange, HttpServer}
@@ -50,11 +50,15 @@ trait PerformanceResults {
   }
 
   private def measureToJson(index: Int)(measure: FinishedMeasure): String = {
-    val x = measure.start.start.atZone(paris).format(toIso)
-    val x2 = measure.end.atZone(paris).format(toIso)
+    val x = removeLeftZeroPaddedValues(measure.start.start.atZone(paris).format(toIso))
+    val x2 = removeLeftZeroPaddedValues(measure.end.atZone(paris).format(toIso))
     val label = measure.start.label
     s"                    {x: $x, x2: $x2, y: $index, label: '$label'}"
   }
+
+  private def removeLeftZeroPaddedValues(date: String): String = date
+    .replaceAll(""", 0([1-9]{2})""", ",  $1")
+    .replaceAll(""", 00([1-9])""", ",   $1")
 
   private def renameThreadPools(name: String): String = name match {
     case "Thread-2" ⇒ "Default HttpServer thread"
