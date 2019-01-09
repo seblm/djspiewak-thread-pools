@@ -1,7 +1,7 @@
 package infrastructure.web
 
 import java.nio.file.{Files, Paths}
-import java.time.ZoneId
+import java.time.{Duration, ZoneId}
 import java.time.format.DateTimeFormatter
 
 import chrono.{ChronoManager, FinishedMeasure}
@@ -30,14 +30,23 @@ trait PerformanceResults {
 
   private def generate(): Unit = {
     val measuresByThread = chronoManager.clear()
+    val total = computeTotalElapsedDuration(measuresByThread.values.flatten.toList)
     val threads = measuresByThread.keySet
     val data = threads.zipWithIndex.map { case (thread, index) ⇒
       measuresByThread(thread).map(measureToJson(index)).mkString(",\n")
     }.mkString("[\n", ",\n", "\n                ]")
     val source = Source.fromResource("template.html").mkString
+      .replaceAll("""\$\{total\}""", total.getOrElse(0).toString)
       .replaceAll("""\$\{threads\}""", threads.toList.map(renameThreadPools).mkString("['", "', '", "']"))
       .replaceAll("""\$\{data\}""", data)
     Files.write(Paths.get("src", "main", "webapp", "index.html"), source.getBytes)
+  }
+
+  private def computeTotalElapsedDuration(measures: List[FinishedMeasure]): Option[Long] = for {
+    start ← measures.map(_.start.start).sorted.headOption
+    end ← measures.map(_.end).sorted.lastOption
+  } yield {
+    Duration.between(start, end).toMillis
   }
 
   private def measureToJson(index: Int)(measure: FinishedMeasure): String = {
