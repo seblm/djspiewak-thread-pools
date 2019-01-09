@@ -60,7 +60,7 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
       installPerformanceResultsTo(server)
 
       server.createContext("/", (exchange: HttpExchange) ⇒ {
-        measure("handle") {
+        measure(s"handle ${exchange.getRequestURI.getQuery}") {
           Thread.sleep(Random.nextInt(40) + 80)
           exchange.sendResponseHeaders(200, 0)
           exchange.close()
@@ -104,13 +104,13 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
       // ...
 
       server.createContext("/", (exchange: HttpExchange) ⇒ {
-        measure("🚫") {
+        measure(s"🚫 ${exchange.getRequestURI.getQuery}") {
           Thread.sleep(Random.nextInt(40) + 80)
         }
-        measure("🔥") {
+        measure(s"🔥 ${exchange.getRequestURI.getQuery}") {
           fibonacci(Random.nextInt(1) + 37)
         }
-        measure("↗️") {
+        measure(s"↗️") {
           exchange.sendResponseHeaders(200, 0)
           exchange.close()
         }
@@ -140,18 +140,18 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     server.setExecutor(newSingleThreadExecutor())
     val nonBlockingIOPolling = server.getExecutor()  // pool-1-thread-1
     val blockingIOThreadPool = newCachedThreadPool() // pool-2-thread-*
-    val cpuBoundThreadPool = newFixedThreadPool(2)   // pool-3-thread-*
+    val cpuBoundThreadPool = newFixedThreadPool(4)   // pool-3-thread-*
 
     // ...
 
     server.createContext("/", (exchange: HttpExchange) ⇒ {
       measure("↘️") {
         Future {
-          measure("🚫") {
+          measure(s"🚫 ${exchange.getRequestURI.getQuery}") {
             Thread.sleep(Random.nextInt(40) + 80)
           }
         }(blockingIOThreadPool).map { _ ⇒
-          measure("🔥") {
+          measure(s"🔥 ${exchange.getRequestURI.getQuery}") {
             fibonacci(Random.nextInt(1) + 39)
           }
         }(cpuBoundThreadPool).onComplete { _ ⇒
