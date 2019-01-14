@@ -1,11 +1,9 @@
 package infrastructure.log
 
-import java.util.logging.Logger
+import org.slf4j.{Logger, LoggerFactory}
 
 trait Log {
 
-  System.setProperty("java.util.logging.config.file", "src/main/resources/logging.properties")
-
-  val log: Logger = Logger.getLogger("threadpools")
+  val log: Logger = LoggerFactory.getLogger("threadpools")
 
 }
