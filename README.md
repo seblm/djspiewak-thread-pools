@@ -2,6 +2,10 @@
 
 Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b543800958cf61af6efa8e072bfd5c).
 
+![thread pools](https://typelevel.org/cats-effect/img/concurrency-thread-pools.png)
+
+From [cats-effect documentation](https://typelevel.org/cats-effect/concurrency/basics.html#choosing-thread-pool)
+
  1. (Seb) Start with a basic HTTPServer (default HTTP server thread):
  
     ```scala
