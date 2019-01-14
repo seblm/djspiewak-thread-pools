@@ -8,7 +8,7 @@ import scala.concurrent.duration._
 class LoadTest extends Simulation {
 
   private val httpProtocol = http.baseUrl("http://localhost:8080")
-  private val scn = scenario("loadtest").repeat(5, "i") {
+  private val scn = scenario("loadtest").repeat(8, "i") {
     exec(http("request ${i}").get("/?${i}"))
       .pause(session ⇒ (30 + session("i").as[Int]).milliseconds)
   }

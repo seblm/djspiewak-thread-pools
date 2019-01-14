@@ -6,19 +6,57 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
 
 From [cats-effect documentation](https://typelevel.org/cats-effect/concurrency/basics.html#choosing-thread-pool)
 
- 1. (Seb) Start with a basic HTTPServer (default HTTP server thread):
- 
+ 0. Prepare yourself
+    1. Start web server
+
+    ```bash
+    cd src/main/webapp
+    python -m SimpleHTTPServer
+    ```
+
+    2. Launch [performance results web page](http://localhost:8000)
+
+    3. Delete gatling previous runs
+
+    ```bash
+    rm -r target/gatling/*
+    ```
+
+    4. Launch sbt shell (⇧⌘S)
+
+    5. Prepare `curl` and `test.sh` from terminal
+
+    6. Close slack, switch off macos notifications
+
+    7. Start jvisualvm:
+
+    ```bash
+    /Library/Java/JavaVirtualMachines/jdk1.8.0_162.jdk/Contents/Home/bin/jvisualvm
+    ``` 
+
+ 1. (Seb) Start with a basic HTTPServer (default HTTP server thread) and some computations:
+
     ```scala
     import java.net.InetSocketAddress
 
-    import com.sun.net.httpserver.HttpServer
+    import com.sun.net.httpserver.{HttpExchange, HttpServer}
+    import domain.Fibonacci
     import infrastructure.log.Log
-    
-    object ThreadPoolsHttpServer extends App with Log {
 
-      val defaultBacklog = 0
-      val server = HttpServer.create(new InetSocketAddress(8080), defaultBacklog)
-    
+    import scala.util.Random
+
+    object ThreadPoolsHttpServer extends App with Log with Fibonacci {
+
+      private val defaultBacklog = 0
+      private val server = HttpServer.create(new InetSocketAddress(8080), defaultBacklog)
+
+      server.createContext("/", { exchange: HttpExchange ⇒
+        Thread.sleep(Random.nextInt(40) + 80)
+        fibonacci(Random.nextInt(1) + 37)
+        exchange.sendResponseHeaders(200, 0)
+        exchange.close()
+      })
+
       server.start()
       log.info("server is started, main thread will stop")
 
@@ -28,84 +66,24 @@ From [cats-effect documentation](https://typelevel.org/cats-effect/concurrency/b
     Then invoke the server
 
     ```bash
-    $ curl --silent --include localhost:8080 | head -n 1
-    HTTP/1.1 404 Not Found
-    ```
-
- 2. (Martin) Add a default route:
-
-    ```scala
-    import com.sun.net.httpserver.HttpExchange
-    
-    server.createContext("/", (exchange: HttpExchange) ⇒ {
-      exchange.sendResponseHeaders(200, 0)
-      exchange.close()
-    }
-    ```
-
-    Then invoke the server
-    ```bash
-    $ curl --silent --include localhost:8080 | head -n 1
+    $ curl --include localhost:8080 | head -n 1
     HTTP/1.1 200 OK
     ```
 
- 3. (Seb) Measure the thing with some blocking IO:
+ 2. (Martin) Measure:
 
     ```scala
     import com.sun.net.httpserver.{HttpExchange, HttpServer}
-    import infrastructure.log.Log
-    import infrastructure.web.PerformanceResults
-
-    import scala.util.Random
-    
-    object ThreadPoolsHttpServer extends App with Log with PerformanceResults {
-
-      // ...
-      installPerformanceResultsTo(server)
-
-      server.createContext("/", (exchange: HttpExchange) ⇒ {
-        measure(s"handle ${exchange.getRequestURI.getQuery}") {
-          Thread.sleep(Random.nextInt(40) + 80)
-          exchange.sendResponseHeaders(200, 0)
-          exchange.close()
-        }
-      }
-
-      // ...
-    }
-    ```
-
-    Then invoke the server
-
-    ```bash
-    src/scripts/test.sh
-    ```
-
-    Start web server
-
-    ```bash
-    cd src/main/webapp
-    python -m SimpleHTTPServer
-    ```
-
-    And go to [performance results web page](http://localhost:8000).
-
-    We can see that requests are stacked, performing blocking io and cpu bounded tasks on non blocking io polling is
-    bad.
-
- 4. (Martin) Add computation and measure all the thing:
-
-    ```scala
-    import com.sun.net.httpserver.HttpExchange
     import domain.Fibonacci
     import infrastructure.log.Log
     import infrastructure.web.PerformanceResults
 
     import scala.util.Random
 
-    object ThreadPoolsHttpServer extends App with Log with PerformanceResults with Fibonacci {
+    object ThreadPoolsHttpServer extends App with Log with Fibonacci with PerformanceResults {
 
       // ...
+      installPerformanceResultsTo(server)
 
       server.createContext("/", (exchange: HttpExchange) ⇒ {
         measure(s"🚫 ${exchange.getRequestURI.getQuery}") {
@@ -121,21 +99,29 @@ From [cats-effect documentation](https://typelevel.org/cats-effect/concurrency/b
       }
 
       // ...
+
     }
     ```
+
+    Then invoke the server
 
     ```bash
     src/scripts/test.sh
     ```
 
+    And go to [performance results web page](http://localhost:8000).
 
- 5. (Seb) Creates Thread pools and dispatch:
+    We can see that requests are stacked, performing blocking io and cpu bounded tasks on non blocking io polling is
+    bad.
+
+ 3. (Seb) Creates Thread pools and dispatch:
 
     ```scala
     import java.util.concurrent.Executors.{newCachedThreadPool, newFixedThreadPool, newSingleThreadExecutor}
-    
+
     import com.sun.net.httpserver.HttpExchange
-    
+
+    import scala.concurrent.Future
     import scala.concurrent.JavaConversions._
     import scala.util.Random
 
@@ -148,7 +134,7 @@ From [cats-effect documentation](https://typelevel.org/cats-effect/concurrency/b
 
     // ...
 
-    server.createContext("/", (exchange: HttpExchange) ⇒ {
+    server.createContext("/", { exchange: HttpExchange ⇒
       measure("↘️") {
         Future {
           measure(s"🚫 ${exchange.getRequestURI.getQuery}") {
@@ -165,18 +151,20 @@ From [cats-effect documentation](https://typelevel.org/cats-effect/concurrency/b
           }
         }(nonBlockingIOPolling)
       }
-    }
+    })
     ```
 
- 6. (Martin) cats-effect
+ 4. (Martin) cats-effect
 
     ```scala
     import cats.effect.IO
-    import scala.util.Try
+    import com.sun.net.httpserver.HttpExchange
+
+    import scala.util.Random
 
     // ...
 
-    server.createContext("/", (exchange: HttpExchange) ⇒ {
+    server.createContext("/", { exchange: HttpExchange ⇒
       val program = for {
         _ <- IO.shift(blockingIOThreadPool)
         _ <- IO {
@@ -200,12 +188,12 @@ From [cats-effect documentation](https://typelevel.org/cats-effect/concurrency/b
       } yield ()
 
       measure("↘️") {
-        program.unsafeRunAsync(_.fold(_ ⇒ (), identity))
+        program.unsafeRunAsync(_ ⇒ ())
       }
     })
     ```
 
- 7. (Seb) Gatling
+ 5. (Seb) Gatling
 
     Show scenario `performance.LoadTest`.
 
