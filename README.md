@@ -201,4 +201,12 @@ Source code to understand [Thread Pools](https://gist.github.com/djspiewak/46b54
     })
     ```
 
- 7. Gatling
+ 7. (Seb) Gatling
+
+    Show scenario `performance.LoadTest`.
+
+    Then start sbt task `gatling:test`.
+
+    Visit [gatling reports](http://localhost:8000/gatling).
+
+    Optional: use jvisualvm to show CPU usage and threads.
